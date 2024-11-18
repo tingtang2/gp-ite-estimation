@@ -15,4 +15,5 @@ Also be sure to specify/change the `save_dir` and `data_dir` configs in the `mai
 
 ## Relevant papers:
 - [Bayesian Inference of Individualized Treatment Effects using Multi-task Gaussian Processes](https://arxiv.org/abs/1704.02801)
+    - [Code Link](https://github.com/vanderschaarlab/mlforhealthlabpub/tree/main/alg/causal_multitask_gaussian_processes_ite)
 - [Computation-Aware Gaussian Processes: Model Selection And Linear-Time Inference](https://arxiv.org/abs/2411.01036)
