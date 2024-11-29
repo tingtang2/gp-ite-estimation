@@ -7,8 +7,11 @@ import random
 import torch
 from torch import nn
 from torch.optim import Adam, AdamW
+from trainers.cmgp_trainer import CMGPTrainer
+from cmgp.datasets import load
+from cmgp.utils.metrics import sqrt_PEHE_with_diff
 
-arg_trainer_map = {'': ''}
+arg_trainer_map = {'gpytorch_multitask_ihdp_trainer': CMGPTrainer}
 arg_optimizer_map = {'adamW': AdamW, 'adam': Adam}
 
 
@@ -59,6 +62,9 @@ def main() -> int:
     args = parser.parse_args()
     configs = args.__dict__
 
+    # need this precision for GP fitting
+    torch.set_default_dtype(torch.float64)
+
     # for repeatability
     torch.manual_seed(configs['seed'])
     random.seed(configs['seed'])
@@ -73,15 +79,27 @@ def main() -> int:
     logging.info(configs)
 
     # get trainer
-    trainer_type = arg_trainer_map[configs['trainer_type']]
-    trainer = trainer_type(
-        optimizer_type=arg_optimizer_map[configs['optimizer']],
-        criterion=nn.CrossEntropyLoss(reduction='sum'),
-        **configs)
+    # trainer_type = arg_trainer_map[configs['trainer_type']]
+    # trainer = trainer_type(
+    #     optimizer_type=arg_optimizer_map[configs['optimizer']],
+    #     criterion=nn.CrossEntropyLoss(reduction='sum'),
+    #     **configs)
+
+    # load data
+    X_train, W_train, Y_train, Y_train_full, X_test, Y_test = load("ihdp")
 
     # perform experiment n times
     for iter in range(configs['num_repeats']):
-        trainer.run_experiment(iter)
+        trainer = CMGPTrainer(X_train, W_train, Y_train)
+        pred = trainer.predict(X_train)
+        pehe = sqrt_PEHE_with_diff(Y_train_full, pred)
+
+        print(f"in sample PEHE score for CMGP on ihdp = {pehe}")
+        pred = trainer.predict(X_test)
+
+        pehe = sqrt_PEHE_with_diff(Y_test, pred)
+
+        print(f"out of sample PEHE score for CMGP on ihdp = {pehe}")
 
     return 0
 
